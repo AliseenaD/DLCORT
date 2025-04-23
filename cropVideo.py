@@ -29,4 +29,15 @@ def crop_video(input_path, output_path, y1, y2, x1, x2):
     out.release()
 
 # Example usage:
-crop_video("/Users/alidaeihagh/Desktop/507X_1_d1DLC_resnet50_ObjectTestNov21shuffle1_250000_labeled.mp4", "/Users/alidaeihagh/Desktop/507X_1_d1DLC_cropped.mp4", y1=77, y2=342, x1=159, x2=447)
+input = [
+    "/Users/alidaeihagh/Desktop/DLCORT/508F-0-D1/508F-0-D1DLC_resnet50_ObjectTestNov21shuffle1_250000_labeled.mp4",
+    "/Users/alidaeihagh/Desktop/DLCORT/508F-2-D1/508F-2-D1DLC_resnet50_ObjectTestNov21shuffle1_250000_labeled.mp4"
+]
+output = [
+    "/Users/alidaeihagh/Desktop/DLCORT/508F-0-D1/508F-0-D1_dlc_cropped.mp4",
+    "/Users/alidaeihagh/Desktop/DLCORT/508F-2-D1/508F-2-D1_dlc_cropped.mp4"
+]
+
+for i in range(len(input)):
+    crop_video(input[i], output[i], y1=75, y2=335, x1=120, x2=400)
+    print(f"{output[i]} complete!")

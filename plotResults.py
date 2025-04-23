@@ -1,62 +1,39 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy import stats
+import matplotlib.pyplot as plt
 
-# Data organization
-day1_left = [47.93, 39.33, 49.47]  # 510F_1, 510F_2, 510F_3
-day1_right = [42.27, 44.13, 47.13]
-day2_left = [28.73, 19.53, 42.07]
-day2_right = [42.6, 28.4, 43.67]
+# Data
+groups = ['1000-1,1000-2,524B_LR', '507x-1,2,3', '510F-1,2,3']
+values = [
+    [-0.177143, 0.287234, -0.859813],  # 1000/524B group (1000_1_d2, 1000_2_d2, 524B_LR_d2)
+    [-0.16, -0.353718, -0.262626],      # 507X group (507X_1_d2, 507X_2_d2, 507X_3_d2)
+    [-0.246154, 0.155174, -0.538462]   # 510F group (510F_1_d2, 510F_2_d2, 510F_3_d2)
+]
 
-# Calculate means
-means = [np.mean(day1_left), np.mean(day1_right), np.mean(day2_left), np.mean(day2_right)]
+# Calculate means and standard errors
+means = [np.mean(row) for row in values]
+sems = [np.std(row, ddof=1) / np.sqrt(len(row)) for row in values]
 
-# Calculate standard errors
-sems = [stats.sem(day1_left), stats.sem(day1_right), stats.sem(day2_left), stats.sem(day2_right)]
+# Create figure and axis
+fig, ax = plt.subplots(figsize=(10, 6))
 
-# Set up the plot
-plt.figure(figsize=(12, 6))
-bar_width = 0.35
-x = np.array([1, 2, 4, 5])  # Position bars with a gap between days
+# Plot bars
+x = np.arange(len(groups))
+bars = ax.bar(x, means, yerr=sems, capsize=5, alpha=0.7, color='skyblue', ecolor='black')
 
-# Create bars with error bars
-bars = plt.bar(x, means, bar_width, 
-               color=['blue', 'red', 'blue', 'red'],
-               alpha=0.7,
-               yerr=sems,
-               capsize=5)
+# Plot individual points
+for i, row in enumerate(values):
+    ax.scatter(np.full_like(row, i), row, color='navy', alpha=0.6, zorder=3)
 
-# Add individual points
-mouse_colors = ['red', 'blue', 'green']
-mouse_labels = ['510F_1', '510F_2', '510F_3']
+# Customize plot
+ax.set_ylabel('Discrimination Index')
+ax.set_title('Average Discrimination Indices by Group with Error Bars D2 2Min')
+ax.set_xticks(x)
+ax.set_xticklabels(groups, rotation=45, ha='right')
+ax.grid(True, axis='y', linestyle='--', alpha=0.7)
+ax.set_ylim(bottom=-0.9, top=0.4)
 
-# Plot points for each bar
-for i, data in enumerate([day1_left, day1_right, day2_left, day2_right]):
-    for j, value in enumerate(data):
-        jitter = np.random.normal(0, 0.02)
-        if i == 0:  # Only add labels for the first set of points
-            plt.scatter(x[i] + jitter, value, color=mouse_colors[j], s=50, alpha=0.8, 
-                       label=mouse_labels[j])
-        else:
-            plt.scatter(x[i] + jitter, value, color=mouse_colors[j], s=50, alpha=0.8)
-
-# Customize the plot
-plt.ylabel('Time (seconds)')
-plt.title('Mouse Performance - Left vs Right Object')
-plt.xticks(x, ['Day 1\nLeft', 'Day 1\nRight', 'Day 2\nLeft', 'Day 2\nRight'])
-plt.legend(title='Mouse ID')
-
-# Add grid for better readability
-plt.grid(True, linestyle='--', alpha=0.7)
-
-# Adjust y-axis to start from 0
-plt.ylim(bottom=0)
-
-# Show the plot
+# Adjust layout to prevent label cutoff
 plt.tight_layout()
-plt.show()
 
-# Print the means and SEMs for reference
-for i, (mean, sem) in enumerate(zip(means, sems)):
-    condition = ['Day 1 Left', 'Day 1 Right', 'Day 2 Left', 'Day 2 Right'][i]
-    print(f"{condition} Mean ± SEM: {mean:.2f} ± {sem:.2f} seconds")
+# Show plot
+plt.show()

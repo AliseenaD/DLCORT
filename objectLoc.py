@@ -95,10 +95,12 @@ class RegionMarker:
 
             # Break if all objects have been marked and the ESC key has been pressed
             key = cv2.waitKey(0)
+            print(f"key pressed: {key}")
             if key==27 and self.current_region_index >= len(self.regions) - 1:
                 break
             # Delete the last click if delete button pressed
-            if key==8 and self.current_region_index > 0:
+            if key==127 and self.current_region_index > 0:
+                print('Delete pressed')
                 self.current_region_index -= 1
                 self.region_areas.pop()
                 self.draw_regions(frame_to_show)
