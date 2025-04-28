@@ -1,5 +1,7 @@
 # DeepLabCut Object Recognition Test Analysis
 
+This software enables analysis of object recognition tests using labeled DeepLabCut mouse videos. Users can place multiple customizable object markers within the video’s field of view. The analysis measures mouse-object interactions by calculating the distance between the mouse’s head and the center of each object, ensuring that the head is both within the object's radius and oriented toward the object (with a manually adjustable angle threshold). Additional features include the calculation of the mouse’s average speed, automatically excluding periods when movement is below 3 cm/sec. For preprocessing, users also have the ability to crop video frames to a specific area and trim the experiment duration to focus the analysis on a desired timeframe.
+
 ## Environment Setup
 
 1. Clone the code from this repository.
