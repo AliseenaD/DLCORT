@@ -5,6 +5,7 @@ from objectLoc import RegionMarker
 import math
 import numpy as np
 import pandas as pd
+import csv
 
 class InteractionAnalyzerUI:
     def __init__(self, root):
@@ -20,7 +21,7 @@ class InteractionAnalyzerUI:
         ttk.Label(main_frame, text="CSV File:").grid(row=0, column=0, sticky=tk.W, pady=5)
         self.csv_path = tk.StringVar()
         ttk.Entry(main_frame, textvariable=self.csv_path, width=50).grid(row=0, column=1, padx=5)
-        ttk.Button(main_frame, text="Browse", command=self.browse_csv).grid(row=0, column=2)
+        ttk.Button(main_frame, text="Browse", command=self.browse_dlc_csv).grid(row=0, column=2)
         
         ttk.Label(main_frame, text="Video File:").grid(row=1, column=0, sticky=tk.W, pady=5)
         self.video_path = tk.StringVar()
@@ -32,21 +33,26 @@ class InteractionAnalyzerUI:
         ttk.Entry(main_frame, textvariable=self.output_path, width=50).grid(row=2, column=1, padx=5)
         ttk.Button(main_frame, text="Browse", command=self.browse_output).grid(row=2, column=2)
         
+        ttk.Label(main_frame, text="Ouput CSV File:").grid(row=3, column=0, sticky=tk.W, pady=5)
+        self.output_csv_path = tk.StringVar(value="output.csv")
+        ttk.Entry(main_frame, textvariable=self.output_csv_path, width=50).grid(row=3, column=1, padx=5)
+        ttk.Button(main_frame, text="Browse", command=self.browse_results_csv).grid(row=3, column=2, padx=5)
+        
         # Parameters
         param_frame = ttk.LabelFrame(main_frame, text="Parameters", padding="10")
-        param_frame.grid(row=3, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        param_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         
         ttk.Label(param_frame, text="Radius:").grid(row=0, column=0, sticky=tk.W)
-        self.radius = tk.StringVar(value="75")
+        self.radius = tk.StringVar(value="30")
         ttk.Entry(param_frame, textvariable=self.radius, width=10).grid(row=0, column=1, padx=5)
         
         ttk.Label(param_frame, text="Angle:").grid(row=0, column=2, sticky=tk.W, padx=(20,0))
-        self.angle = tk.StringVar(value="30")
+        self.angle = tk.StringVar(value="60")
         ttk.Entry(param_frame, textvariable=self.angle, width=10).grid(row=0, column=3, padx=5)
         
         # Regions
         regions_frame = ttk.LabelFrame(main_frame, text="Regions", padding="10")
-        regions_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        regions_frame.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         
         self.regions = tk.StringVar(value="left,right")
         ttk.Label(regions_frame, text="Region Names (comma-separated):").grid(row=0, column=0, sticky=tk.W)
@@ -54,14 +60,14 @@ class InteractionAnalyzerUI:
 
         # Frames per second
         frames_frame = ttk.LabelFrame(main_frame, text="Frames Per Second", padding="10")
-        frames_frame.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        frames_frame.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         ttk.Label(frames_frame, text="Video FPS:").grid(row=0, column=0, sticky=tk.W)
         self.fps = tk.StringVar(value="30")
         ttk.Entry(frames_frame, textvariable=self.fps, width=10).grid(row=0, column=1, padx=5)
 
         # Pixels per cm
         pixel_frame = ttk.LabelFrame(main_frame, text="Pixels Per CM", padding="10")
-        pixel_frame.grid(row=6, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        pixel_frame.grid(row=7, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         ttk.Label(pixel_frame, text="Pixel/Cm:").grid(row=0, column=0, sticky=tk.W)
         self.pixel_ratio = tk.StringVar(value="30")
         ttk.Entry(pixel_frame, textvariable=self.pixel_ratio, width=10).grid(row=0, column=1, padx=5)
@@ -69,28 +75,12 @@ class InteractionAnalyzerUI:
 
         # Crop video if needed
         crop_video_frame = ttk.LabelFrame(main_frame, text="Crop video if no analysis performed yet (not required for previously analyzed videos)", padding="10")
-        crop_video_frame.grid(row=7, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
-        # x1 coordinate
-        ttk.Label(crop_video_frame, text="x1:").grid(row=0, column=0, sticky=tk.W)
-        self.x1 = tk.StringVar(value="")
-        ttk.Entry(crop_video_frame, textvariable=self.x1, width=10).grid(row=0, column=1, padx=5)
-        # y1 coordinate
-        ttk.Label(crop_video_frame, text="y1:").grid(row=0, column=2, sticky=tk.W)
-        self.y1 = tk.StringVar(value="")
-        ttk.Entry(crop_video_frame, textvariable=self.y1, width=10).grid(row=0, column=3, padx=5)
-        # x2 coordinate
-        ttk.Label(crop_video_frame, text="x2:").grid(row=0, column=4, sticky=tk.W)
-        self.x2 = tk.StringVar(value="")
-        ttk.Entry(crop_video_frame, textvariable=self.x2, width=10).grid(row=0, column=5, padx=5)
-        # y2 coordinate
-        ttk.Label(crop_video_frame, text="y2:").grid(row=0, column=6, sticky=tk.W)
-        self.y2 = tk.StringVar(value="")
-        ttk.Entry(crop_video_frame, textvariable=self.y2, width=10).grid(row=0, column=7, padx=5)
-        ttk.Button(crop_video_frame, text="Crop Video", command=self.crop_video).grid(row=0, column=9, padx=5)
+        crop_video_frame.grid(row=8, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        ttk.Button(crop_video_frame, text="Crop Video", command=self.drag_crop_video).grid(row=0, column=9, padx=5)
 
         # Frame trimming
         trim_frame = ttk.LabelFrame(main_frame, text="Trim to a designated number of frames", padding="10")
-        trim_frame.grid(row=8, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
+        trim_frame.grid(row=9, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
         ttk.Label(trim_frame, text="Frame Trim").grid(row=0, column=0, sticky=tk.W)
         self.frame_count = tk.StringVar(value='')
         ttk.Entry(trim_frame, textvariable=self.frame_count, width=10).grid(row=0, column=1, padx=5)
@@ -98,9 +88,9 @@ class InteractionAnalyzerUI:
 
         # Run button
         ttk.Button(main_frame, text="Run Analysis", command=self.run_analysis).grid(row=10, column=0, columnspan=3, pady=20)
-        ttk.Button(main_frame, text="Calculate Average Speed", command=self.calculate_average_speed__per_frame).grid(row=11, column=0, columnspan=3, pady=20)
         
-    def browse_csv(self):
+    '''Browses the inputted CSV file path and ensures it is of specific type'''
+    def browse_dlc_csv(self):
         filename = filedialog.askopenfilename(
             title="Select CSV file",
             filetypes=(("CSV files", "*.csv"), ("All files", "*.*"))
@@ -108,6 +98,15 @@ class InteractionAnalyzerUI:
         if filename:
             self.csv_path.set(filename)
 
+    def browse_results_csv(self):
+        filename = filedialog.askopenfilename(
+            title="Select CSV file",
+            filetypes=(("CSV files", "*.csv"), ("All files", "*.*"))
+        )
+        if filename:
+            self.output_csv_path.set(filename)
+
+    '''Browses the inputted video path and ensures it is of specific type'''
     def browse_video(self):
         filename = filedialog.askopenfilename(
             title="Select video file",
@@ -116,6 +115,7 @@ class InteractionAnalyzerUI:
         if filename:
             self.video_path.set(filename)
 
+    '''Browses the output and saves based on the extensions'''
     def browse_output(self):
         filename = filedialog.asksaveasfilename(
             title="Save output video as",
@@ -125,22 +125,87 @@ class InteractionAnalyzerUI:
         if filename:
             self.output_path.set(filename)
 
-    # Function that will crop the video and set the video path to that for analysis
-    def crop_video(self):
-        # First ensure all values are present
-        if not self.video_path.get() or not all([self.x1.get().isdigit(), 
-                                                 self.x2.get().isdigit(), 
-                                                 self.y1.get().isdigit(), 
-                                                 self.y2.get().isdigit()]):
-            messagebox.showerror("Error", "Please provide a valid video path")
+    '''A function that allows the user to use their mouse to drag the rectangle in which they want to crop the video'''
+    def drag_crop_video(self):
+        # Ensure video path is there
+        if not self.video_path.get() or not self.output_path.get():
+            messagebox.showerror("Error", "Please provide a valid video path and output path")
             return
+        
+        # Set up coordinate references 
+        crop_coords = {'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0, 'drawing': False}
+        try:
+            # Get video properties and set up video writer
+            cap = cv2.VideoCapture(self.video_path.get())
+            ret, frame = cap.read()
+            if not ret:
+                messagebox.showerror("Error", "Could not read from video file")
+                cap.release()
+                return
 
+            # Create a copy of the first frame for drawing purposes
+            selection_img = frame.copy()
+            cv2.namedWindow("Select Crop Region")
+
+            # Set mouse callback function to trach positions
+            def mouse_callback(event, x, y, flags, param):
+                # Set the inital coordinates on mouse down
+                if event == cv2.EVENT_LBUTTONDOWN:
+                    crop_coords["x1"] = x
+                    crop_coords["y1"] = y
+                    crop_coords["drawing"] = True
+                # Draw a rectangle on mouse move
+                elif event == cv2.EVENT_MOUSEMOVE:
+                    if crop_coords["drawing"]:
+                        # Create a copy to draw the rectangle on
+                        img_copy = frame.copy()
+                        cv2.rectangle(img_copy, 
+                                    (crop_coords['x1'], crop_coords['y1']),
+                                    (x, y), (0, 255, 0), 2)
+                        cv2.imshow("Select Crop Region", img_copy)
+                # Create final square as long as x and y values are correct
+                elif event == cv2.EVENT_LBUTTONUP:
+                    crop_coords["x2"] = x
+                    crop_coords["y2"] = y
+                    crop_coords["drawing"] = False
+
+                    # Ensure the coordinates are correct (flip if not)
+                    if crop_coords["x1"] > crop_coords["x2"]:
+                        crop_coords["x1"], crop_coords["x2"] = crop_coords["x2"], crop_coords["x1"]
+                    if crop_coords["y1"] > crop_coords["y2"]:
+                        crop_coords["y1"], crop_coords["y2"] = crop_coords["y2"], crop_coords["y1"]
+
+                    # Draw final rectangle
+                    cv2.rectangle(selection_img, 
+                                (crop_coords['x1'], crop_coords['y1']),
+                                (crop_coords['x2'], crop_coords['y2']), 
+                                (0, 255, 0), 2)
+                    cv2.imshow("Select Crop Region", selection_img)
+                
+            # Set the mouse callback
+            cv2.setMouseCallback("Select Crop Region", mouse_callback)
+            # Show image and wait for crop selection
+            cv2.imshow("Select Crop Region", frame)
+            cv2.waitKey(0)
+
+            # Now crop the video if x and y values are correct
+            if crop_coords["x1"] and crop_coords["x1"] != crop_coords["x2"] and crop_coords["y1"] and crop_coords["y1"] != crop_coords["y2"]:
+                cv2.destroyAllWindows()
+                self.perform_crop(crop_coords["x1"], crop_coords["x2"], crop_coords["y1"], crop_coords["y2"])
+            else:
+                cv2.destroyAllWindows()
+                messagebox.showinfo("Info", "Crop cancelled or invalid selection")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred while cropping the video: {str(e)}")
+
+    '''A helper function that takes in all of the necessary coordinates and writes a new video that 
+    crops each frame to those coordinates'''
+    def perform_crop(self, x1, x2, y1, y2):
         # Setup output path and coordinates
         output_path = self.video_path.get().rsplit('.', 1)[0] + '_cropped.mp4'
-        x1 = int(self.x1.get())
-        x2 = int(self.x2.get())
-        y1 = int(self.y1.get())
-        y2 = int(self.y2.get())
+
+        # Crop the video
         try:
             # Get video properties and set up video writer
             cap = cv2.VideoCapture(self.video_path.get())
@@ -170,7 +235,7 @@ class InteractionAnalyzerUI:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred while cropping the video: {str(e)}")
 
-    # Function that trims the CSV based on the number of frames provided
+    '''Function that trims the CSV based on the number of frames provided'''
     def trim_csv(self):
         # Check to ensure csv path and number of frames are present
         if not self.csv_path.get():
@@ -192,7 +257,7 @@ class InteractionAnalyzerUI:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred while trimming the CSV: {str(e)}")
 
-    # Function that calculates speed per frame and then 
+    '''Function that calculates speed per frame and then saves the output to the output csv file'''
     def calculate_average_speed__per_frame(self):
         # first ensure csv_path is not empty
         if not self.csv_path.get():
@@ -238,11 +303,9 @@ class InteractionAnalyzerUI:
                 speeds.append(speed)
 
         self.average_speed = np.mean(speeds) if speeds else 0
-        messagebox.showinfo('Speed Analysis Complete',
-                            "🏃 MOVEMENT ANALYSIS\n"
-                            f"• Average speed: {self.average_speed:.2f} cm/sec\n")
+        return self.average_speed
     
-    # Calculate the angle between the nose and the object using vectors
+    '''Calculates the angle between the nose and the object using vectors'''
     def calculate_angle_between_vectors(self, v1, v2):
         v1_norm = v1 / np.linalg.norm(v1)
         v2_norm = v2 / np.linalg.norm(v2)
@@ -258,7 +321,8 @@ class InteractionAnalyzerUI:
 
         return angle
 
-    # Function that checks to see if nose is within radius and pointing at the center of an object
+    '''Function that checks to see if nose is within radius and pointing at the center of an object, the angle at which the 
+    the head is pointing increases as the mouse gets further away from the object, until it reaches the final maximum allowed angle'''
     def check_interaction(self, nose_cords, left_cords, right_cords, object_regions):
         nx, ny = nose_cords
         lx, ly = left_cords
@@ -289,14 +353,10 @@ class InteractionAnalyzerUI:
                     return object["title"]
         return None
 
-    # Go through and check for interaction for every frame of location csv
+    '''Goes through and check for interaction for every frame of location csv by taking the coordinates for each frame
+    and checking interaction. Only checks the interaction if the probability threshold is met (0.6) for all body parts'''
     def count_interactions(self, csv_file, object_regions):
         df = pd.read_csv(csv_file, skiprows=2)
-
-        # Make sure to set interaction counts to zero at the start
-        print("Printing out the object interaction counts")
-        for object in object_regions:
-            print(object["interaction_count"])
 
         # Iterate through each row and check interaction
         for index, row in df.iterrows():
@@ -314,10 +374,6 @@ class InteractionAnalyzerUI:
 
             # Check the interaction for each frame
             self.check_interaction(nose_coords, l_ear_coords, r_ear_coords, object_regions)
-        
-        print("Printing out the object interaction counts")
-        for object in object_regions:
-            print(object["interaction_count"])
 
     '''
     Takes in the coordinates of the left and right ear and checks which quadrant the mouse is 
@@ -393,7 +449,6 @@ class InteractionAnalyzerUI:
         # Read the CSV file and remaining video props (fps)
         df = pd.read_csv(csv_file, skiprows=2)
         fps = int(cap.get(cv2.CAP_PROP_FPS))
-        print(output_path.split('.')[0])
         reformatted_output_name = output_path.split('.')[0] + 'quadrant_analysis'
         reformatted_output = reformatted_output_name + '.' + output_path.split('.')[1]
 
@@ -479,10 +534,10 @@ class InteractionAnalyzerUI:
 
         cap.release()
         out.release()
-        print("Video processing complete!")
         return reformatted_output
 
-    # Mark every interaction on the video and keep track of frames interacted too
+    '''Mark every interaction on the video and keep track of frames interacted too. It then proceeds to draw the interactions
+    throughout the whole video and returns the output path'''
     def process_video_interactions(self, csv_file, video_path, object_regions, output_path):
         # Read the CSV file
         df = pd.read_csv(csv_file, skiprows=2)
@@ -566,7 +621,6 @@ class InteractionAnalyzerUI:
 
         cap.release()
         out.release()
-        print("Video processing complete!")
         return output_path
     
     '''Takes in the marked_region object and returns the quadrant that object is in, whether it be
@@ -606,11 +660,12 @@ class InteractionAnalyzerUI:
             frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
             frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 
-            # Go through and obtain the quadrants each object is in
+            # Go through and obtain the quadrants each object is in, add quadrant field into regions
             object_regions = {}
             for object in marked_regions:
                 object_quadrant = self.check_quadrant(object, video_width=frame_width, video_height=frame_height)
-                object_regions[object['title']] = object_quadrant
+                object['quadrant'] = object_quadrant
+                # object_regions[object['title']] = object_quadrant
 
             # Count the interactions in csv
             quadrant_interactions = self.count_quadrant_interactions(self.csv_path.get(), video_width=frame_width, video_height=frame_height)
@@ -641,16 +696,86 @@ class InteractionAnalyzerUI:
                 f"• Saved to: {output_path}\n\n"
             )
             
-            return message
+            return quadrant_interactions, message
         
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
     
-    # Run the analysis
+    '''Saves the generates results from the full analysis to the output CSV file.
+    Fills out each of the results into a formatted table per mouse within the file'''
+    def save_results_csv(self, regions, marked_regions, quadrant_results):
+        # First check to make sure the output file is there
+        if not self.output_csv_path.get():
+            messagebox.showerror("Error", "Please select a CSV output path")
+            return
+        
+        try:
+            # Create data rows for the CSV
+            rows = []
+            
+            # Add extra white space
+            rows.append(['', '', '', '', '', '', '', '', ''])
+
+            # Header row with mouse name
+            rows.append(['Mouse_name', self.csv_path.get().split('.')[0].strip(), '', '', '', '', ''])
+            
+            # Interaction Times header
+            rows.append(['Interaction Times', '', '', 'Quadrant', 'Frames', 'Time', ''])
+            
+            # Object names and empty cells
+            obj_names_row = ['']
+            for region in regions:
+                obj_names_row.append(region)
+            # Add quadrant headers
+            obj_names_row.extend(['Upper-left', quadrant_results['upper-left'], f"{quadrant_results['upper-left'] / float(self.fps.get()):.2f}"])
+            rows.append(obj_names_row)
+
+            # Frames row - use the marked_regions from run_analysis
+            frames_row = ['Frames']
+            for obj in marked_regions:  # marked_regions should be accessible from run_analysis
+                frames_row.append(obj['interaction_count'])
+            # Add upper-right quadrant data
+            frames_row.extend(['Upper-right', quadrant_results['upper-right'], f"{quadrant_results['upper-right'] / float(self.fps.get()):.2f}"])
+            rows.append(frames_row)
+            
+            # Seconds row
+            seconds_row = ['Seconds']
+            for obj in marked_regions:
+                seconds_row.append(f"{obj['interaction_count'] / float(self.fps.get()):.2f}")
+            # Add bottom-left quadrant data
+            seconds_row.extend(['Bottom-left', quadrant_results['bottom-left'], f"{quadrant_results['bottom-left'] / float(self.fps.get()):.2f}"])
+            rows.append(seconds_row)
+            
+            # Object and Quadrant headers
+            rows.append(['Object', 'Quadrant', '', 'Bottom-right', quadrant_results['bottom-right'], f"{quadrant_results['bottom-right'] / float(self.fps.get()):.2f}", ''])
+            
+            # Object locations
+            for i, region in enumerate(regions):
+                # Find the corresponding object in marked_regions by title
+                region_data = next((obj for obj in marked_regions if obj['title'] == region), None)
+                # Get the quadrant from the object data if available
+                quadrant = region_data['quadrant']
+                # If on lost object add average speed to it
+                if i == len(regions) - 1:
+                    rows.append([region, quadrant,'', 'Avg Speed:', f"{self.average_speed:.2f} cm/sec", '', ''])
+                else:
+                    rows.append([region, quadrant, '', '', '', '', ''])
+            
+            # Write the data to the CSV file
+            with open(self.output_csv_path.get(), 'a', newline='') as csvfile:
+                csv_writer = csv.writer(csvfile)
+                for row in rows:
+                    csv_writer.writerow(row)
+                    
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+        
+
+    '''Runs the full analysis'''
     def run_analysis(self):
         try:
             # Validate the inputs
-            if not self.csv_path.get() or not self.video_path.get():
+            if not self.csv_path.get() or not self.video_path.get() or not self.output_csv_path.get():
                 messagebox.showerror("Error", "Please select both CSV and video files")
                 return
             if not self.radius.get().isdigit() or not self.angle.get().isdigit():
@@ -672,6 +797,9 @@ class InteractionAnalyzerUI:
             # Count the interactions
             self.count_interactions(self.csv_path.get(), marked_regions)
 
+            # Calculate average speed
+            self.calculate_average_speed__per_frame()
+
             # Process video
             output_path = self.process_video_interactions(self.csv_path.get(), self.video_path.get(), marked_regions, self.output_path.get())
 
@@ -691,8 +819,15 @@ class InteractionAnalyzerUI:
                 "🎥 OUTPUT VIDEO\n"
                 f"• Saved to: {output_path}\n\n"
                 
-                f"{quadrant_results}"
+                f"{quadrant_results[1]}\n"
+
+                "🏃 MOVEMENT ANALYSIS\n"
+                f"• Average speed: {self.average_speed:.2f} cm/sec\n"
             )
+            print(f"REGIONS: {regions}")
+            print(f"MARKED_REGIONS: {marked_regions}")
+            print(f"QUADRANT_RESULTS: {quadrant_results[0]}")
+            self.save_results_csv(regions, marked_regions, quadrant_results[0])
             
             messagebox.showinfo("Analysis Complete", message)
 
