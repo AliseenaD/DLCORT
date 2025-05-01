@@ -186,16 +186,32 @@ class InteractionAnalyzerUI:
             cv2.setMouseCallback("Select Crop Region", mouse_callback)
             # Show image and wait for crop selection
             cv2.imshow("Select Crop Region", frame)
-            cv2.waitKey(0)
 
-            # Now crop the video if x and y values are correct
-            if crop_coords["x1"] and crop_coords["x1"] != crop_coords["x2"] and crop_coords["y1"] and crop_coords["y1"] != crop_coords["y2"]:
-                cv2.destroyAllWindows()
-                self.perform_crop(crop_coords["x1"], crop_coords["x2"], crop_coords["y1"], crop_coords["y2"])
-            else:
-                cv2.destroyAllWindows()
-                messagebox.showinfo("Info", "Crop cancelled or invalid selection")
+            while True:
+                key = cv2.waitKey(0)
 
+                # Escape key closes window and performs crop
+                if key == 27:
+                    # Now crop the video if x and y values are correct
+                    if crop_coords["x1"] and crop_coords["x1"] != crop_coords["x2"] and crop_coords["y1"] and crop_coords["y1"] != crop_coords["y2"]:
+                        cv2.destroyAllWindows()
+                        self.perform_crop(crop_coords["x1"], crop_coords["x2"], crop_coords["y1"], crop_coords["y2"])
+                    else:
+                        cv2.destroyAllWindows()
+                        messagebox.showinfo("Info", "Crop cancelled or invalid selection")
+                # Handle DELETE key - clear the selection
+                elif key == 127:  # DELETE key
+                    # Reset coordinates
+                    crop_coords["x1"] = 0
+                    crop_coords["x2"] = 0
+                    crop_coords["y1"] = 0
+                    crop_coords["y2"] = 0
+                    crop_coords["drawing"] = False
+                    # Clear drawing by resetting the selection image
+                    selection_img = frame.copy()
+                    cv2.imshow("Select Crop Region", selection_img)
+                    print('Cleared selection')
+            
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred while cropping the video: {str(e)}")
 
