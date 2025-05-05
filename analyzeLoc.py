@@ -110,7 +110,7 @@ class InteractionAnalyzerUI:
     def browse_video(self):
         filename = filedialog.askopenfilename(
             title="Select video file",
-            filetypes=(("Video files", "*.mp4 *.avi"), ("All files", "*.*"))
+            filetypes=(("Video files", "*.mp4 *.avi *.mpg"), ("All files", "*.*"))
         )
         if filename:
             self.video_path.set(filename)
@@ -120,7 +120,7 @@ class InteractionAnalyzerUI:
         filename = filedialog.asksaveasfilename(
             title="Save output video as",
             defaultextension=".mp4",
-            filetypes=(("MP4 files", "*.mp4"), ("All files", "*.*"))
+            filetypes=(("MP4 files", "*.mp4 *.mpg"), ("All files", "*.*"))
         )
         if filename:
             self.output_path.set(filename)
