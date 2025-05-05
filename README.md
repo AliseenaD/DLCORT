@@ -16,7 +16,7 @@ This software enables analysis of object recognition tests using labeled DeepLab
 
 1. Clone the code from this repository.  
 2. Ensure you have Anaconda installed on your device. You can download it [here](https://www.anaconda.com/download/success).  
-3. Create a new Conda environment:  
+3. Create a new Conda environment (only have to do on first time ever using DLCORT):  
    ```bash
    conda create --name dlcort python=3.11
    ```
@@ -28,7 +28,7 @@ This software enables analysis of object recognition tests using labeled DeepLab
    ```bash
    conda deactivate
    ```
-5. Install all dependencies by navigating to the repository folder in your terminal and running:  
+5. Install all dependencies by navigating to the repository folder in your terminal and running (only have to do on first time ever using DLCORT):  
    ```bash
    pip install -r requirements.txt
    ```
