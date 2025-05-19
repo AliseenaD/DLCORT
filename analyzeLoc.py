@@ -49,6 +49,10 @@ class InteractionAnalyzerUI:
         ttk.Label(param_frame, text="Angle:").grid(row=0, column=2, sticky=tk.W, padx=(20,0))
         self.angle = tk.StringVar(value="60")
         ttk.Entry(param_frame, textvariable=self.angle, width=10).grid(row=0, column=3, padx=5)
+
+        ttk.Label(param_frame, text="Speed Cutoff:").grid(row=0,column=4, sticky=tk.W, padx=(20,0))
+        self.speed_cutoff = tk.StringVar(value="3")
+        ttk.Entry(param_frame, textvariable=self.speed_cutoff, width=10).grid(row=0, column=5, padx=5)
         
         # Regions
         regions_frame = ttk.LabelFrame(main_frame, text="Regions", padding="10")
@@ -315,7 +319,7 @@ class InteractionAnalyzerUI:
 
             # Now calculate speed and add to array if greater than or equal to 3
             speed = distance * float(self.fps.get())
-            if speed >= 3:
+            if speed >= float(self.speed_cutoff.get()):
                 speeds.append(speed)
 
         self.average_speed = np.mean(speeds) if speeds else 0
@@ -794,8 +798,8 @@ class InteractionAnalyzerUI:
             if not self.csv_path.get() or not self.video_path.get() or not self.output_csv_path.get():
                 messagebox.showerror("Error", "Please select both CSV and video files")
                 return
-            if not self.radius.get().isdigit() or not self.angle.get().isdigit():
-                messagebox.showerror("Error", "Radius and angle must be numbers")
+            if not self.radius.get().isdigit() or not self.angle.get().isdigit() or not self.speed_cutoff.get().isdigit():
+                messagebox.showerror("Error", "Radius, angle, and speed cutoff must be numbers")
                 return
             
             # Get the parameters
