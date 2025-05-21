@@ -6,12 +6,14 @@ import math
 import numpy as np
 import pandas as pd
 import csv
+import os
 
 class InteractionAnalyzerUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Ineraction analyzer")
-        self.root.geometry("800x800")
+        self.root.geometry("900x800")
+        self.frame_spans = []
 
         # Create main frame
         main_frame = ttk.Frame(root, padding="10")
@@ -37,7 +39,7 @@ class InteractionAnalyzerUI:
         self.output_csv_path = tk.StringVar(value="output.csv")
         ttk.Entry(main_frame, textvariable=self.output_csv_path, width=50).grid(row=3, column=1, padx=5)
         ttk.Button(main_frame, text="Browse", command=self.browse_results_csv).grid(row=3, column=2, padx=5)
-        
+
         # Parameters
         param_frame = ttk.LabelFrame(main_frame, text="Parameters", padding="10")
         param_frame.grid(row=4, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
@@ -54,6 +56,10 @@ class InteractionAnalyzerUI:
         self.speed_cutoff = tk.StringVar(value="3")
         ttk.Entry(param_frame, textvariable=self.speed_cutoff, width=10).grid(row=0, column=5, padx=5)
         
+        ttk.Label(param_frame, text="Frame Span Cutoff:").grid(row=0,column=6, sticky=tk.W, padx=(20,0))
+        self.frame_span_cutoff = tk.StringVar(value="0")
+        ttk.Entry(param_frame, textvariable=self.frame_span_cutoff, width=10).grid(row=0, column=7, padx=5)
+
         # Regions
         regions_frame = ttk.LabelFrame(main_frame, text="Regions", padding="10")
         regions_frame.grid(row=5, column=0, columnspan=3, sticky=(tk.W, tk.E), pady=10)
@@ -377,7 +383,10 @@ class InteractionAnalyzerUI:
     and checking interaction. Only checks the interaction if the probability threshold is met (0.6) for all body parts'''
     def count_interactions(self, csv_file, object_regions):
         df = pd.read_csv(csv_file, skiprows=2)
-
+        span = 0
+        start_frame = 0
+        end_frame = start_frame
+        curr_object = ""
         # Iterate through each row and check interaction
         for index, row in df.iterrows():
             # Get all of the position coords
@@ -393,7 +402,25 @@ class InteractionAnalyzerUI:
                 continue
 
             # Check the interaction for each frame
-            self.check_interaction(nose_coords, l_ear_coords, r_ear_coords, object_regions)
+            interaction = self.check_interaction(nose_coords, l_ear_coords, r_ear_coords, object_regions)
+
+            # Now count the span if there is or isn't an interaction
+            if interaction:
+                # If first interaction, then set start_frame to current index
+                if span == 0:
+                    curr_object = interaction
+                    start_frame = index
+                span += 1
+            else:
+                # If this is first frame after a span, have this be endframe
+                if span > 0 and span >= int(self.frame_span_cutoff.get()):
+                    end_frame = start_frame + span - 1
+                    self.frame_spans.append([start_frame, end_frame, curr_object])
+                # Reset span and curr object
+                curr_object = ""
+                span = 0
+                
+            
 
     '''
     Takes in the coordinates of the left and right ear and checks which quadrant the mouse is 
@@ -469,7 +496,7 @@ class InteractionAnalyzerUI:
         # Read the CSV file and remaining video props (fps)
         df = pd.read_csv(csv_file, skiprows=2)
         fps = int(cap.get(cv2.CAP_PROP_FPS))
-        reformatted_output_name = output_path.split('.')[0] + 'quadrant_analysis'
+        reformatted_output_name = output_path.split('.')[0] + '_quadrant_analysis'
         reformatted_output = reformatted_output_name + '.' + output_path.split('.')[1]
 
         # Create a video writer
@@ -687,11 +714,15 @@ class InteractionAnalyzerUI:
                 object['quadrant'] = object_quadrant
                 # object_regions[object['title']] = object_quadrant
 
+            # Get correct directory for output path of video
+            output_directory = os.path.dirname(self.video_path.get())
+            output_video_path = output_directory + '/' + self.output_path.get()
+
             # Count the interactions in csv
             quadrant_interactions = self.count_quadrant_interactions(self.csv_path.get(), video_width=frame_width, video_height=frame_height)
             # Create the output video
             output_path = self.process_video_quadrant_interactions(self.csv_path.get(),
-                                                                self.output_path.get(), cap=cap, video_width=frame_width,
+                                                                output_video_path, cap=cap, video_width=frame_width,
                                                                 video_height=frame_height)
             
             # Format the quadrant interaction results
@@ -789,7 +820,62 @@ class InteractionAnalyzerUI:
                     
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
+    """
+    This function writes the frame spans out into a text file for the user to see
+    """
+    def write_output_frames_span(self):
+        # Get correct directory for output path of the file
+        output_directory = os.path.dirname(self.video_path.get())
+        output_path = output_directory + '/frame_spans.csv'
         
+        with open(output_path, 'w', newline='') as csvfile:
+            csv_writer = csv.writer(csvfile)
+            
+            # Write metadata as comments
+            csv_writer.writerow(['# INTERACTION FRAME SPANS REPORT'])
+            csv_writer.writerow([])  # Empty row for spacing
+            
+            # Check if there are any spans to report
+            if not self.frame_spans:
+                csv_writer.writerow(['No interaction spans detected above the frame span cutoff threshold.'])
+            else:
+                # Write header row
+                csv_writer.writerow(['Span #', 'Object', 'Start Frame', 'End Frame', 'Duration (frames)', 'Duration (seconds)'])
+                
+                # Write each span with its details
+                for i, span in enumerate(self.frame_spans):
+                    start_frame, end_frame = span[0:2]
+                    duration_frames = end_frame - start_frame + 1
+                    duration_seconds = duration_frames / float(self.fps.get())
+                    object_name = span[2] if len(span) > 2 else "Unknown"  # Get object name if available
+                    
+                    csv_writer.writerow([
+                        i+1, 
+                        object_name,
+                        start_frame, 
+                        end_frame, 
+                        duration_frames, 
+                        f"{duration_seconds:.2f}"
+                    ])
+                
+                # Add empty row before summary
+                csv_writer.writerow([])
+                
+                # Calculate and write summary statistics
+                total_frames = sum([end - start + 1 for start, end, object in self.frame_spans])
+                total_seconds = total_frames / float(self.fps.get())
+                avg_span_frames = total_frames / len(self.frame_spans) if self.frame_spans else 0
+                avg_span_seconds = total_seconds / len(self.frame_spans) if self.frame_spans else 0
+                
+                csv_writer.writerow(['Summary Statistics'])
+                csv_writer.writerow(['Total Interaction Spans', len(self.frame_spans)])
+                csv_writer.writerow(['Total Interaction Time (frames)', total_frames])
+                csv_writer.writerow(['Total Interaction Time (seconds)', f"{total_seconds:.2f}"])
+                csv_writer.writerow(['Average Span Duration (frames)', f"{avg_span_frames:.2f}"])
+                csv_writer.writerow(['Average Span Duration (seconds)', f"{avg_span_seconds:.2f}"])
+        
+        return output_path
 
     '''Runs the full analysis'''
     def run_analysis(self):
@@ -820,14 +906,21 @@ class InteractionAnalyzerUI:
             # Calculate average speed
             self.calculate_average_speed__per_frame()
 
+            # Get correct directory for output path of video
+            output_directory = os.path.dirname(self.video_path.get())
+            output_video_path = output_directory + '/' + self.output_path.get()
+
             # Process video
-            output_path = self.process_video_interactions(self.csv_path.get(), self.video_path.get(), marked_regions, self.output_path.get())
+            output_path = self.process_video_interactions(self.csv_path.get(), self.video_path.get(), marked_regions, output_video_path)
 
             # Format interaction results
             interaction_results = "\n".join([
                 f"• {obj['title']}: {obj['interaction_count']} frames ({obj['interaction_count'] / float(self.fps.get()):.2f} seconds)"
                 for obj in marked_regions
             ])
+
+            # Write the file for the frame span
+            span_path = self.write_output_frames_span()
 
             # Create the formatted message
             message = (
@@ -839,16 +932,16 @@ class InteractionAnalyzerUI:
                 "🎥 OUTPUT VIDEO\n"
                 f"• Saved to: {output_path}\n\n"
                 
+                "OUTPUT FRAME SPANS\n"
+                f"• Saved to: {span_path}\n\n"
+
                 f"{quadrant_results[1]}\n"
 
                 "🏃 MOVEMENT ANALYSIS\n"
                 f"• Average speed: {self.average_speed:.2f} cm/sec\n"
             )
-            print(f"REGIONS: {regions}")
-            print(f"MARKED_REGIONS: {marked_regions}")
-            print(f"QUADRANT_RESULTS: {quadrant_results[0]}")
             self.save_results_csv(regions, marked_regions, quadrant_results[0])
-            
+
             messagebox.showinfo("Analysis Complete", message)
 
         except Exception as e:

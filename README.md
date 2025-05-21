@@ -50,7 +50,10 @@ This software enables analysis of object recognition tests using labeled DeepLab
   - If you already have a CSV file with previously ran analyses, enter that file in the **Output CSV File** field. If this is your first time running the analysis, or you want to save the results to a new CSV file, enter a new CSV file name.  
   - The parameter values are already set to the default values used in prior experiments. An interaction will only be counted within a frame if both parameters are met.  
     - **Radius** signifies the pixel distance cutoff the mouse’s head can be from an object to be considered for interaction.  
-    - **Angle** indicates the maximum angle in which the mouse’s head can be pointed away from the center of the object to be considered as an interaction. This angle scales as the mouse gets further away from the object. It starts at 90˚ and decreases with distance from the object until it reaches the inputted angle at the edge of the radius. A higher radius allows for a wider range of angles.  
+    - **Angle** indicates the maximum angle in which the mouse’s head can be pointed away from the center of the object to be considered as an interaction. This angle scales 
+    as the mouse gets further away from the object. It starts at 90˚ and decreases with distance from the object until it reaches the inputted angle at the edge of the radius. A higher radius allows for a wider range of angles. 
+    - **Speed Cutoff** indicates the minimum speed the mouse must be going (in cm/sec) out for it to be counted towards the final speed calculation
+    - **Frame Span Cutoff** indicates the miminum number of frames in a row the mouse must be interacted with an object for it to be included in the frame spans output file.
   - Enter the object names you would like the objects to have in the **Region Names** field. These names should be comma-separated. The default is “left” and “right”.  
   - Enter the frames per second the video was captured in the **Video FPS** text field. The default is 30 FPS.  
   - Enter the **Pixel/CM** value. You can calculate this using ImageJ by measuring the pixel distance across the box and dividing by its real-world length in centimeters.  
@@ -59,6 +62,7 @@ This software enables analysis of object recognition tests using labeled DeepLab
   **Outputs include:**  
   - A video with an interaction counter (same name as output video).  
   - A video with a quadrant counter (same name as output video with `_quadrant_analysis` suffix).  
+  - A newly created CSV file containing all of the frame spans of mouse interaction and the object that was interacted with during those spans.
   - An updated or newly created CSV file with:
     - Interaction time with each object  
     - Time spent in each quadrant  
